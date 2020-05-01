@@ -15,7 +15,7 @@ public class BaseUtil {
         return false;
     }
 
-    public static String getPath2Str(String fileName) {
+    public static String getParent(String fileName) {
         File file = new File(fileName);
         return file.getParent();
     }
