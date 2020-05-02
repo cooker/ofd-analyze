@@ -2,6 +2,7 @@ package r.a.h.grant.gbt33190.ofdx;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 /**
  * grant
@@ -10,6 +11,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@ToString(exclude = "ares")
 public class OFDPageArea {
     byte[][] ares;
     int w;
@@ -21,11 +23,22 @@ public class OFDPageArea {
         this.h = h;
     }
 
-    @Override
-    public String toString() {
-        return "OFDPageArea{" +
-                "w=" + w +
-                ", h=" + h +
-                '}';
+    public void print(){
+        StringBuilder sb = new StringBuilder();
+        for (byte[] ar : ares){
+            for (byte a : ar) {
+                if(0x0 == a) {
+                    sb.append("  O");
+                }else {
+                    sb.append("  X");
+                }
+            }
+            sb.append("\n");
+        }
+        System.out.println(sb.toString());
+    }
+
+    public void addPoint(int x, int y){
+        ares[x-1][y-1] = 0x1;
     }
 }

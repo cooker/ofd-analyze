@@ -49,4 +49,11 @@ public class InvoiceInfo {
     private String jshj;
     //合计金额
     private String hjje;
+
+    //收款人
+    private String skr;
+    //开票人
+    private String kpr;
+    //复合人
+    private String fhr;
 }

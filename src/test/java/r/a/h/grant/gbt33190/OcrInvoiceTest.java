@@ -1,10 +1,11 @@
 package r.a.h.grant.gbt33190;
 
+import com.rits.cloning.Cloner;
 import org.junit.Test;
 import r.a.h.grant.gbt33190.ocr.OcrInvoiceHelper;
-import r.a.h.grant.gbt33190.ofdx.InvoiceInfo;
-import r.a.h.grant.gbt33190.ofdx.OFD;
-import r.a.h.grant.gbt33190.ofdx.OFDDocument;
+import r.a.h.grant.gbt33190.ofdx.*;
+
+import java.util.stream.Collectors;
 
 /**
  * Unit test for simple App.
@@ -17,7 +18,7 @@ public class OcrInvoiceTest
     @Test
     public void ocr()
     {
-        InvoiceInfo invoiceInfo = new OcrInvoiceHelper().ocr("/Users/grant/Documents/fp");
+        InvoiceInfo invoiceInfo = new OcrInvoiceHelper().ocr("/Users/grant/Pictures/fp1");
         System.out.println(invoiceInfo);
     }
 
@@ -33,16 +34,29 @@ public class OcrInvoiceTest
     public void ofdDoc(){
         OFDDocument ofdDocument = OFDDocument.xml("/Users/grant/Pictures/fp/Doc_0/Document.xml");
         System.out.println(ofdDocument);
+        OFDSinglePage sp = ofdDocument.getIndexPage(0);
+        System.out.println(sp.getPage().getRealPagePath());
+
+        sp.ready();
+        System.out.println(sp.getPageArea());
+        System.out.println(sp.getPoints());
+
+        System.out.println(sp.getPoints().keySet().stream().limit(5).collect(Collectors.toList()));
     }
 
     @Test
     public void xx(){
-        byte[][] xx = new byte[5][5];
-        xx[1][1] = 1;
-        byte[][] aa = new byte[5][5];
-        System.arraycopy(xx, 0, aa, 0, 5);
-        System.out.println(aa[1][1]);
-//        System.
+        OFDPageArea ofdPageArea = new OFDPageArea(2,2);
+
+        ofdPageArea.print();
+
+        Cloner cloner = Cloner.standard();
+        OFDPageArea of = cloner.deepClone(ofdPageArea);
+        ofdPageArea.addPoint(1,1);
+
+        of.print();
+
+        ofdPageArea.print();
 
     }
 }

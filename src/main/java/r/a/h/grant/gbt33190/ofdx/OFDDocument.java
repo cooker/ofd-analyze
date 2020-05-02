@@ -1,7 +1,9 @@
 package r.a.h.grant.gbt33190.ofdx;
 
 import com.rits.cloning.Cloner;
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import org.dom4j.Document;
 import org.dom4j.Element;
 import r.a.h.grant.gbt33190.utils.BaseUtil;
@@ -17,6 +19,7 @@ import java.util.List;
  */
 @Getter
 @Setter
+@ToString
 public class OFDDocument {
     private String documentPath;
     private OFDPageArea pageArea;
