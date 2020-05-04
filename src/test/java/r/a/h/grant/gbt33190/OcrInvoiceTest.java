@@ -18,7 +18,7 @@ public class OcrInvoiceTest
     @Test
     public void ocr()
     {
-        InvoiceInfo invoiceInfo = new OcrInvoiceHelper().ocr("/Users/grant/Pictures/fp1");
+        InvoiceInfo invoiceInfo = new OcrInvoiceHelper().ocr("/Users/grant/Pictures/fp");
         System.out.println(invoiceInfo);
     }
 
