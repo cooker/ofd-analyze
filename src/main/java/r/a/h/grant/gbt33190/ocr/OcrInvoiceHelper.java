@@ -2,6 +2,7 @@ package r.a.h.grant.gbt33190.ocr;
 
 import r.a.h.grant.gbt33190.ofdx.*;
 import r.a.h.grant.gbt33190.ofdx.InvoiceInfo.InvoiceInfoBuilder;
+import r.a.h.grant.gbt33190.utils.BaseUtil;
 
 import java.util.Collections;
 import java.util.List;
@@ -51,8 +52,22 @@ public class OcrInvoiceHelper implements OFDHelper {
         Boundary op = null;
 
         //购方 + 密码区
-
-
+        Boundary b5 = ty5.get(0);
+        if (!BaseUtil.isChinese(b5.getAllText().charAt(0))){
+            //5 6 7 8
+            Integer index = dataYs.get(5);
+            ty5 = treeMap.get(index);
+            builder.gfmc(ty5.get(0).getAllText());
+            if (ty5.size() > 1){
+                builder.mw(BaseUtil.newList(ty5.get(1).getAllText()));
+            }
+            index = dataYs.get(6);
+            builder.gfsh(treeMap.get(index).get(0).getAllText());
+            index = dataYs.get(7);
+            builder.gfdzdh(treeMap.get(index).get(0).getAllText());
+            index = dataYs.get(8);
+            builder.gfyhdh(treeMap.get(index).get(0).getAllText());
+        }
         //金额
         temp = dataYs.stream().skip(treeMap.size() - 7).limit(2).collect(Collectors.toList());
         ty4 = treeMap.get(temp.get(0)).stream().filter(
