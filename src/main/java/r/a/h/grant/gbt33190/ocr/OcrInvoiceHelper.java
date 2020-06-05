@@ -2,8 +2,8 @@ package r.a.h.grant.gbt33190.ocr;
 
 import r.a.h.grant.gbt33190.ofdx.*;
 import r.a.h.grant.gbt33190.ofdx.InvoiceInfo.InvoiceInfoBuilder;
-import r.a.h.grant.gbt33190.utils.BaseUtil;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -15,20 +15,29 @@ import java.util.stream.Collectors;
  * 描述：发票识别助手
  */
 public class OcrInvoiceHelper implements OFDHelper {
+    OcrPosFlag posFlag = null;
+    OFDSinglePage singlePage = null;
+    OFDDocument ofdDocument = null;
 
+    private boolean isUsed = false;
     public InvoiceInfo ocr(String path){
+        if (isUsed) throw new RuntimeException("Can't use please re-instantiate");
         InvoiceInfoBuilder invoiceInfoBuilder = InvoiceInfo.builder();
+        isUsed = true;
         pageParsing(invoiceInfoBuilder, path);
         return invoiceInfoBuilder.build();
     }
 
     private void pageParsing(InvoiceInfoBuilder builder, String path){
         OFD ofd = OFD.xml(path);
-        OFDDocument ofdDocument = OFDDocument.xml(ofd.getRealDocPath());
-        OFDSinglePage singlePage = ofdDocument.getIndexPage(0);
+        ofdDocument = OFDDocument.xml(ofd.getRealDocPath());
+        singlePage = ofdDocument.getIndexPage(0);
+        posFlag = new OcrPosFlag(singlePage);
         singlePage.ready();
         Map<Integer, List<Boundary>> treeMap = singlePage.getPoints();
         List<Integer> dataYs = treeMap.keySet().stream().collect(Collectors.toList());
+
+
         List<Integer> y5 = dataYs.stream().limit(5).collect(Collectors.toList());
         //判断前5位
         builder.fpdm(treeMap.get(y5.get(0)).get(0).getTexts().get(0))
@@ -48,77 +57,166 @@ public class OcrInvoiceHelper implements OFDHelper {
                 builder.jym(b5.getAllText());
             }
         }
-        List<Integer> temp = null;
-        Boundary op = null;
-
-        //购方 + 密码区
-        Boundary b5 = ty5.get(0);
-        if (!BaseUtil.isChinese(b5.getAllText().charAt(0))){
-            //5 6 7 8
-            Integer index = dataYs.get(5);
-            ty5 = treeMap.get(index);
-            builder.gfmc(ty5.get(0).getAllText());
-            if (ty5.size() > 1){
-                builder.mw(BaseUtil.newList(ty5.get(1).getAllText()));
-            }
-            index = dataYs.get(6);
-            builder.gfsh(treeMap.get(index).get(0).getAllText());
-            index = dataYs.get(7);
-            builder.gfdzdh(treeMap.get(index).get(0).getAllText());
-            index = dataYs.get(8);
-            builder.gfyhdh(treeMap.get(index).get(0).getAllText());
-        }
-        //金额
-        temp = dataYs.stream().skip(treeMap.size() - 7).limit(2).collect(Collectors.toList());
-        ty4 = treeMap.get(temp.get(0)).stream().filter(
-                b->!b.getAllText().contains("*") && !b.getAllText().contains("¥")
-        )
-        .sorted((a, b)-> (int) (Double.valueOf(a.getAllText())- Double.valueOf(b.getAllText())))
-        .collect(Collectors.toList());
-        builder.hjje(ty4.get(0).getAllText())
-                .hjse(ty4.get(1).getAllText())
-                .jshj(
-                        treeMap.get(temp.get(1)).size() > 2 ?
-                        treeMap.get(temp.get(1)).get(2).getAllText()
-                        : treeMap.get(temp.get(1)).get(1).getAllText().replaceAll("¥", "")
-                        );
-
-        //销方 + 备注
-        temp = dataYs.stream().skip(treeMap.size() - 5).limit(4).collect(Collectors.toList());
-        ty4 = treeMap.get(temp.get(0)).stream().sorted(
-                (a,b)->a.getX()-b.getX()
-        ).collect(Collectors.toList());
-        if (ty4.size() > 1){
-            builder.bz(ty4.get(1).getAllText());
-        }
-        op = ty4.get(0);
-        builder.xfmc(op.getAllText());
-
-        ty4 = treeMap.get(temp.get(1)).stream().sorted(
-                (a,b)->a.getX()-b.getX()
-        ).collect(Collectors.toList());;
-        op = ty4.get(0);
-        builder.xfsh(op.getAllText());
-
-        ty4 = treeMap.get(temp.get(2)).stream().sorted(
-                (a,b)->a.getX()-b.getX()
-        ).collect(Collectors.toList());
-        op = ty4.get(0);
-        builder.xfdzdh(op.getAllText());
-
-        ty4 = treeMap.get(temp.get(3)).stream().sorted(
-                (a,b)->a.getX()-b.getX()
-        ).collect(Collectors.toList());
-        op = ty4.get(0);
-        builder.xfyhzh(op.getAllText());
-
+        //二维码扫描
+        //TODO
+        //购方
+        this.ocrPurchase(builder, posFlag, treeMap);
+        //密码区
+        this.ocrMw(builder, posFlag, treeMap);
+        //销方
+        this.ocrSeller(builder, posFlag, treeMap);
+        //备注
+        this.ocrRemark(builder, posFlag, treeMap);
         //开票人 对账人 收款人
-        Integer lastY = dataYs.get(dataYs.size() - 1);
-        List<Boundary> lastBoundary = treeMap.get(lastY);
-        Collections.sort(lastBoundary, (a, b)-> a.getX() - b.getX());
-        builder.skr(lastBoundary.get(0).getAllText())
-               .fhr(lastBoundary.get(1).getAllText())
-               .kpr(lastBoundary.get(2).getAllText());
+        this.ocrPersonal(builder, posFlag, treeMap);
 
+    }
+
+    protected void ocrPurchase(InvoiceInfoBuilder builder, OcrPosFlag posFlag, Map<Integer, List<Boundary>> treeMap){
+        List<Integer> datasY = treeMap.keySet().stream().filter(
+                (a)-> posFlag.purchasePosY() <= a && posFlag.mwPosFootY() > a
+
+        ).sorted().collect(Collectors.toList());
+
+        List<Boundary> purchasers = new ArrayList<>();
+
+        for (Integer y:datasY){
+            for (Boundary b : treeMap.get(y)){
+                if (posFlag.mwPosX() > b.getX()){
+                    purchasers.add(b);
+                    break;
+                }
+            }
+        }
+
+        int size = purchasers.size();
+        builder.gfmc(purchasers.get(0).getAllText());
+        if (size > 1){
+            builder.gfsh(purchasers.get(1).getAllText());
+        }
+
+        if (size > 2){
+            builder.gfdzdh(purchasers.get(2).getAllText());
+        }
+
+        if (size > 3){
+            builder.gfyhdh(purchasers.get(3).getAllText());
+        }
+
+    }
+
+    protected void ocrMw(InvoiceInfoBuilder builder, OcrPosFlag posFlag, Map<Integer, List<Boundary>> treeMap){
+        List<Integer> datasY = treeMap.keySet().stream().filter(
+                (a)-> posFlag.mwPosY() <= a
+
+        ).sorted(
+                (a,b)->b-a
+        ).collect(Collectors.toList());
+        for (Integer y:datasY){
+            for (Boundary b : treeMap.get(y)){
+                if (posFlag.mwPosX() <= b.getX()){
+                    builder.mw(b.getTexts());
+                    break;
+                }
+            }
+        }
+    }
+
+    protected void ocrSeller(InvoiceInfoBuilder builder, OcrPosFlag posFlag, Map<Integer, List<Boundary>> treeMap){
+        List<Boundary> xfBoundary = findSellerAera(posFlag, treeMap);
+        xfBoundary =  xfBoundary.stream().filter((a)->posFlag.bzPosX() > a.getX()).collect(Collectors.toList());
+
+        xfBoundary = xfBoundary.stream().sorted((a,b)->{
+            if (a.getY() != b.getY()) return a.getY() - b.getY();
+            return a.getX() - b.getX();
+        }).collect(Collectors.toList());
+
+        int i=1;
+        int y = 0;
+        StringBuilder sb = new StringBuilder();
+        int size = xfBoundary.size();
+        Boundary indexB = null;
+        for (int index = 0; index < size; index++){
+            indexB = xfBoundary.get(index);
+            if (y == 0){
+                sb.append(indexB.getAllText());
+                y = indexB.getY();
+            }else if (y == indexB.getY()){
+                sb.append(indexB.getAllText());
+            }else {
+                fillSellerByIndex(i, y, sb, builder);
+                sb = new StringBuilder(indexB.getAllText());
+                i++;
+                y = indexB.getY();
+            }
+        }
+        fillSellerByIndex(i, y, sb, builder);
+    }
+
+    private void fillSellerByIndex(int index, int y, StringBuilder sb, InvoiceInfoBuilder builder) {
+        switch (index){
+            case 1:
+                builder.xfmc(sb.toString());
+                break;
+            case 2:
+                builder.xfsh(sb.toString());
+                break;
+            case 3:
+                builder.xfdzdh(sb.toString());
+                break;
+            case 4:
+                builder.xfyhzh(sb.toString());
+                break;
+            default: break;
+        }
+    }
+
+    protected void ocrRemark(InvoiceInfoBuilder builder, OcrPosFlag posFlag, Map<Integer, List<Boundary>> treeMap){
+        List<Boundary> bzBoundary = findSellerAera(posFlag, treeMap);
+        bzBoundary =  bzBoundary.stream().filter((a)->posFlag.bzPosX() <= a.getX()).collect(Collectors.toList());
+        if (!bzBoundary.isEmpty()){
+            builder.bz(bzBoundary.get(0).getAllText());
+        }
+
+    }
+
+    private List<Boundary> findSellerAera(OcrPosFlag posFlag, Map<Integer, List<Boundary>> treeMap) {
+        List<Integer> datasY = treeMap.keySet().stream().filter(
+                (a)-> posFlag.personalPosY() > a &&
+                        posFlag.bzPosY() <= a
+
+        ).collect(Collectors.toList());
+
+        List<Boundary> bzBoundary = new ArrayList<>();
+        for (Integer y : datasY) {
+            bzBoundary.addAll(treeMap.get(y));
+        }
+        return bzBoundary;
+    }
+
+    protected void ocrPersonal(InvoiceInfoBuilder builder, OcrPosFlag posFlag, Map<Integer, List<Boundary>> treeMap) {
+        List<Integer> datasY = treeMap.keySet().stream().filter(
+                (a)-> posFlag.personalPosY() <= a
+
+        ).collect(Collectors.toList());
+        List<Boundary> lastBoundary = new ArrayList<>();
+        for (Integer y : datasY) {
+            lastBoundary.addAll(treeMap.get(y));
+        }
+        Collections.sort(lastBoundary, (a, b)-> a.getX() - b.getX());
+        personal(builder, lastBoundary, posFlag);
+    }
+
+    protected void personal(InvoiceInfoBuilder builder, List<Boundary> lastBoundary, OcrPosFlag posFlag){
+        for (Boundary boundary : lastBoundary) {
+            if (boundary.getX() >= posFlag.kprPosX()) {
+                builder.kpr(boundary.getAllText());
+            }else if (boundary.getX() >= posFlag.fhrPosX()){
+                builder.fhr(boundary.getAllText());
+            }else {
+                builder.skr(boundary.getAllText());
+            }
+
+        }
     }
 }

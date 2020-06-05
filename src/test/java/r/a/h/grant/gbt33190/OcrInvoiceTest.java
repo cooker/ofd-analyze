@@ -1,5 +1,6 @@
 package r.a.h.grant.gbt33190;
 
+import com.google.gson.Gson;
 import com.rits.cloning.Cloner;
 import org.junit.Test;
 import r.a.h.grant.gbt33190.ocr.OcrInvoiceHelper;
@@ -18,8 +19,11 @@ public class OcrInvoiceTest
     @Test
     public void ocr()
     {
-        InvoiceInfo invoiceInfo = new OcrInvoiceHelper().ocr("/Users/grant/Pictures/fp");
-        System.out.println(invoiceInfo);
+//        /Users/grant/Downloads/pdf/百望云增值税发票
+//        /Users/grant/Downloads/comm-2020
+        InvoiceInfo invoiceInfo = new OcrInvoiceHelper().ocr("/Users/grant/Downloads/pdf/百望云增值税发票");
+        Gson gson = new Gson();
+        System.out.println(gson.toJson(invoiceInfo));
     }
 
     @Test
