@@ -24,7 +24,6 @@ public class ImageTest {
         String filepath = "/Users/grant/Documents/个人/image_108.jb2";
 
         int imageIndex = 0;
-
         InputStream inputStream = new FileInputStream(filepath);
         DefaultInputStreamFactory disf = new DefaultInputStreamFactory();
         ImageInputStream imageInputStream = disf.getInputStream(inputStream);

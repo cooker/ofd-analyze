@@ -33,30 +33,30 @@ public class OcrInvoiceHelper implements OFDHelper {
         ofdDocument = OFDDocument.xml(ofd.getRealDocPath());
         singlePage = ofdDocument.getIndexPage(0);
         posFlag = new OcrPosFlag(singlePage);
+        final OcrPosFlag fposFlag = posFlag;
         singlePage.ready();
         Map<Integer, List<Boundary>> treeMap = singlePage.getPoints();
         List<Integer> dataYs = treeMap.keySet().stream().collect(Collectors.toList());
 
 
-        List<Integer> y5 = dataYs.stream().limit(5).collect(Collectors.toList());
-        //判断前5位
-        builder.fpdm(treeMap.get(y5.get(0)).get(0).getTexts().get(0))
-                .fphm(treeMap.get(y5.get(1)).get(0).getTexts().get(0))
-                .kprq(treeMap.get(y5.get(2)).get(0).getTexts().get(0));
-        List<Boundary> ty4 = treeMap.get(y5.get(3));
-        List<Boundary> ty5 = treeMap.get(y5.get(4));
-        //校验码
-        if (ty4.size() > 1) {
-            builder.jym(ty4.get(1).getAllText());
-        }else {
-            Boundary b4 = ty4.get(0);
-            Boundary b5 = ty5.get(0);
-            if (b4.getX() > b5.getX()){
-                builder.jym(b4.getAllText());
-            }else {
-                builder.jym(b5.getAllText());
-            }
+        List<Integer> y5 = dataYs.stream().filter((a)->posFlag.purchasePosY() > a).collect(Collectors.toList());
+        List<Boundary> tDatas = new ArrayList<>();
+        List<Boundary> bDatas = new ArrayList<>();
+        for (Integer y : y5){
+            treeMap.get(y).stream().filter(x->fposFlag.centerPosX() < x.getX()).forEach(
+                (x)->{
+                    tDatas.add(x);
+                }
+            );
         }
+        bDatas = tDatas.stream().sorted(
+                (a,b)->a.getY() - b.getY()
+        ).collect(Collectors.toList());
+        //判断前5位
+        builder.fpdm(bDatas.get(0).getAllText())
+                .fphm(bDatas.get(1).getAllText())
+                .kprq(bDatas.get(2).getAllText())
+                .jym(bDatas.get(3).getAllText());
         //二维码扫描
         //TODO
         //购方

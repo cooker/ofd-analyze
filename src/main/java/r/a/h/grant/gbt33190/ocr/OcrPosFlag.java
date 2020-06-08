@@ -17,6 +17,10 @@ public class OcrPosFlag {
     }
 
 
+    public int centerPosX(){
+        return (int)(w * 0.5);
+    }
+
     public int purchasePosY(){
         return (int)(h * 0.20510);
     }
