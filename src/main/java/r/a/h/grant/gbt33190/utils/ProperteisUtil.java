@@ -22,7 +22,7 @@ public class ProperteisUtil {
     }
 
     public static Properties getConf(String cnf) throws IOException {
-        InputStream in = Thread.currentThread().getClass().getClassLoader().getResourceAsStream(cnf);
+        InputStream in = Thread.currentThread().getContextClassLoader().getResourceAsStream(cnf);
         Properties p = new Properties();
         p.load(in);
         return p;

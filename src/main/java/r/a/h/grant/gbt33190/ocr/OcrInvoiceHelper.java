@@ -2,7 +2,9 @@ package r.a.h.grant.gbt33190.ocr;
 
 import r.a.h.grant.gbt33190.ofdx.*;
 import r.a.h.grant.gbt33190.ofdx.InvoiceInfo.InvoiceInfoBuilder;
+import r.a.h.grant.gbt33190.utils.BaseUtil;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -26,6 +28,19 @@ public class OcrInvoiceHelper implements OFDHelper {
         isUsed = true;
         pageParsing(invoiceInfoBuilder, path);
         return invoiceInfoBuilder.build();
+    }
+
+    public InvoiceInfo ocrZip(String path){
+        String p = null;
+        try {
+            p = BaseUtil.unzip(path);
+            return ocr(p);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            BaseUtil.rmDir(p);
+        }
+        return null;
     }
 
     private void pageParsing(InvoiceInfoBuilder builder, String path){

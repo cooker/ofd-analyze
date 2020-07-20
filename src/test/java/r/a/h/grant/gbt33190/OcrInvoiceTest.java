@@ -2,10 +2,14 @@ package r.a.h.grant.gbt33190;
 
 import com.google.gson.Gson;
 import com.rits.cloning.Cloner;
+import org.apache.commons.io.FileUtils;
 import org.junit.Test;
 import r.a.h.grant.gbt33190.ocr.OcrInvoiceHelper;
 import r.a.h.grant.gbt33190.ofdx.*;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.stream.Collectors;
 
 /**
@@ -21,18 +25,24 @@ public class OcrInvoiceTest
     {
 //        /Users/grant/Downloads/pdf/百望云增值税发票
 //        /Users/grant/Downloads/comm-2020
-        InvoiceInfo invoiceInfo = new OcrInvoiceHelper().ocr("/Users/grant/Downloads/pdf/百望云增值税发票");
+        InvoiceInfo invoiceInfo = new OcrInvoiceHelper().ocrZip("/Users/grant/Documents/个人/031001800311_70831393.ofd");
         Gson gson = new Gson();
         System.out.println(gson.toJson(invoiceInfo));
     }
 
     @Test
     public void ofd(){
-        String str = "/Users/grant/Pictures/fp";
+        String str = "/Users/grant/Documents/个人/fp";
         OFD ofd = OFD.xml(str);
         System.out.println(ofd.getRealDocPath());
     }
 
+
+    @Test
+    public void clear() throws IOException {
+       FileUtils.forceDeleteOnExit(Paths.get("/Users/grant/Documents/个人/Code/GSysStation/ofd-analyze/tmp/a99a42e2-cf50-4531-8434-cb842d17949f").toFile());
+//       System.out.println(is);
+    }
 
     @Test
     public void ofdDoc(){
