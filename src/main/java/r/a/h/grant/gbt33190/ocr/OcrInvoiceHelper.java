@@ -1,10 +1,25 @@
 package r.a.h.grant.gbt33190.ocr;
 
+import com.google.gson.Gson;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.FileEntity;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 import r.a.h.grant.gbt33190.ofdx.*;
 import r.a.h.grant.gbt33190.ofdx.InvoiceInfo.InvoiceInfoBuilder;
 import r.a.h.grant.gbt33190.utils.BaseUtil;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -41,6 +56,32 @@ public class OcrInvoiceHelper implements OFDHelper {
             BaseUtil.rmDir(p);
         }
         return null;
+    }
+
+    public String ofd2jpg(String path) throws IOException {
+        String url = "http://fapiao.suwell.cn/invoice-info/upload";
+        String imageUrl = "http://fapiao.suwell.cn/invoice-info/export?id=%s&type=image";
+        String id  = "";
+        HttpClient httpClient = HttpClientBuilder.create().build();
+        HttpPost post = new HttpPost(url);
+
+//        post.setHeader("X-Requested-With", "XMLHttpRequest");
+        post.setHeader("Accept-Encoding", "gzip, deflate, br");
+//        post.setHeader("Accept-Language", "zh-CN,zh;q=0.9");
+//        post.setHeader("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Safari/537.36");
+        HttpEntity httpEntity = MultipartEntityBuilder.create()
+                .addBinaryBody("file", new File(path))
+                .build();
+        post.setEntity(httpEntity);
+        HttpResponse response = httpClient.execute(post);
+        String json = EntityUtils.toString(response.getEntity(), "utf-8");
+        //http://fapiao.suwell.cn/reader?file=20200826-143102-774967200
+        //http://fapiao.suwell.cn/invoice-info/info?id=20200826-143102-774967200&type=html
+//        http://fapiao.suwell.cn/invoice-info/export?id=20200826-143102-774967200&type=image
+        id = new Gson().fromJson(json, Map.class).get("id").toString();
+//        http://fapiao.suwell.cn/invoice-info/export?id=20200826-135113-835926400&type=image
+//        http://fapiao.suwell.cn/invoice-info/export?id=20200826-142701-756155600&type=image
+        return String.format(imageUrl, id);
     }
 
     private void pageParsing(InvoiceInfoBuilder builder, String path){

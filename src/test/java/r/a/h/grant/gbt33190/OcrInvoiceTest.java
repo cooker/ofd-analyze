@@ -73,4 +73,10 @@ public class OcrInvoiceTest
         ofdPageArea.print();
 
     }
+
+    @Test
+    public void toJpg() throws IOException {
+        System.out.println(new OcrInvoiceHelper().ofd2jpg("/Users/grant/Documents/工作资料/票易通/项目/阿里巴巴/OFD 样票/百望云增值税发票.ofd"));
+
+    }
 }
