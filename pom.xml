@@ -17,7 +17,7 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <!--version-->
-    <junit.version>4.12</junit.version>
+    <junit.version>4.13.1</junit.version>
     <dom4j.version>1.6.1</dom4j.version>
     <lombok.version>1.18.10</lombok.version>
   </properties>
